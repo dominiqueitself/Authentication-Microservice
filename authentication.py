@@ -1,8 +1,15 @@
 from flask import Flask, jsonify, request
 import json
 import mysql.connector
+import jwt
 
 app = Flask(__name__)
+
+header = {  
+  "alg": "HS256",  
+  "typ": "JWT"  
+}  
+key = "&Hygf%mGko"
 
 authdb = mysql.connector.connect(
     host = "localhost",
@@ -20,10 +27,11 @@ def get_employees(email, password):
     employee = authcursor.fetchone()
     authdb.close()
     
-    if employee:
-        return jsonify({"success": TRUE, "authorization": employee[2]})    
+    if employee: 
+        token = jwt.encode({'email': email}, {'authorization': authorization}, key, algorithm='HS256')
+        return jsonify({"token": token})    
     else:
-        return jsonify({"failed": FALSE})
+        return jsonify({"message": 'Invalid credentials'})
 
 @app.route('/authentication', methods=['POST'])
 def authenticate():
@@ -31,10 +39,6 @@ def authenticate():
     email = data.get('email')
     password = data.get('password')
     return get_employees(email, password)
-
-#need pa itesting
-#need pa ideploy
-#need pa makuha yung input - backend sa login tapos isend sa dito yung email at password para macheck
 
 if __name__ == '__main__':
     app.run(debug=True)
