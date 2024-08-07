@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "venv/bin/python",  // Adjust this path if necessary
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": true
+}
