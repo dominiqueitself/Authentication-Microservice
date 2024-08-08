@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import json
 import mysql.connector
 import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -9,7 +10,7 @@ header = {
   "alg": "HS256",  
   "typ": "JWT"  
 }  
-key = "&Hygf%mGko"
+key = "&Hygf%mGko" #dito papasok si configuration manangement system, kasi bawal hardcoded
 
 authdb = mysql.connector.connect(
     host = "localhost",
@@ -20,6 +21,11 @@ authdb = mysql.connector.connect(
 
 authcursor = authdb.cursor()
 
+#for testing purposes
+email = "nurse1@gmail.com"
+password = "helloWorld"
+hashPassword = generate_password_hash("password")
+
 def get_employees(email, password):
 
     query = "SELECT email, password, authorization FROM employees WHERE email = %s AND password = %s"
@@ -27,7 +33,8 @@ def get_employees(email, password):
     employee = authcursor.fetchone()
     authdb.close()
     
-    if employee: 
+    if employee and check_password_hash(employee[1], password): 
+        email, password, authorization = employee
         token = jwt.encode({'email': email}, {'authorization': authorization}, key, algorithm='HS256')
         return jsonify({"token": token})    
     else:
