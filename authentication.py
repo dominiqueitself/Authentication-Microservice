@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 import json
-import mysql.connector
+import mysql.connector as mysql
 import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -12,40 +12,36 @@ header = {
 }  
 key = "&Hygf%mGko" #dito papasok si configuration manangement system, kasi bawal hardcoded
 
-authdb = mysql.connector.connect(
+authdb = mysql.connect(
     host = "localhost",
     user = "root",
-    password = "root",
-    database = "authenticationMicroservice"
+    password = "buchibi",
+    database = "authentication"
 )
 
 authcursor = authdb.cursor()
 
-#for testing purposes
-email = "nurse1@gmail.com"
-password = "helloWorld"
-hashPassword = generate_password_hash("password")
-
 def get_employees(email, password):
-
-    query = "SELECT email, password, authorization FROM employees WHERE email = %s AND password = %s"
-    authcursor.execute(query, (email, password))
+    authcursor.execute("SELECT email, authorizationId FROM USERS WHERE email = %s", (email,) )
     employee = authcursor.fetchone()
-    authdb.close()
-    
-    if employee and check_password_hash(employee[1], password): 
-        email, password, authorization = employee
-        token = jwt.encode({'email': email}, {'authorization': authorization}, key, algorithm='HS256')
-        return jsonify({"token": token})    
+
+    #and check_password_hash(employee[1], hashPassword) need pang ayusin
+
+    if employee: 
+        email, authorizationId = employee
+        #token = jwt.encode({'email': email}, {'authorization': authorization}, key, algorithm='HS256')
+        #return jsonify({"email": email})
+        return 200
     else:
         return jsonify({"message": 'Invalid credentials'})
 
-@app.route('/authentication', methods=['POST'])
+@app.route('/authenticate', methods=['POST'])
 def authenticate():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    return get_employees(email, password)
+    result = get_employees(email, password)
+    return jsonify(result) 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=3307)
