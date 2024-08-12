@@ -11,8 +11,6 @@ app = Flask(__name__)
 header = {  
   "alg": "HS256",  
   "typ": "JWT",
-  "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
-  "Content-Type": "application/json",
 }  
 
 #secret key - kailangan pang iseperate sa .env file
@@ -32,6 +30,8 @@ def generate_token(username, authorizationId):
     payload = {
         "username": username,
         "authorization ID": authorizationId,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
+        "Content-Type": "application/json",
     }
     token = jwt.encode(payload=payload, header=header)
     return token
@@ -41,12 +41,13 @@ def check_employees(username, password):
 
     authcursor.execute("SELECT username, authorizationId FROM USERS WHERE email = %s", (username,) )
     employee = authcursor.fetchone()
+    print(employee)
 
-    if username and check_password_hash(employee[1], password): 
+    if employee and check_password_hash(employee[1], password): 
         username, authorizationId = employee
         token = generate_token(username, authorizationId)
         return jsonify({"token": token}), 200
-    elif username == 0:
+    elif employee is None:
         return jsonify({"error": 'Invalid credentials'}), 401
 
 #API route for checking the user's credential and sending out result
@@ -62,5 +63,20 @@ def authenticate():
     #returns the result of the checking of the user's credentials
     return jsonify(result) 
 
+""" just for adding users in the database
+@app.route('/')
+def generate_password():
+    password = generate_password_hash("maingayKAYO")
+    values = ("dominique", password, "shanejain00@gmail.com", '09213373131', 2)
+
+    sql = "INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId) VALUES (%s, %s, %s, %s, %s)"
+    authcursor.execute(sql, values)
+    authdb.commit()
+    authcursor.close()
+    authdb.close()
+    return 200
+"""
+
+    
 if __name__ == '__main__':
     app.run(port=3307, debug=True)
