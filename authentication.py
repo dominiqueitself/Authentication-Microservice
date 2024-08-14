@@ -40,7 +40,6 @@ def generate_token(username, authorizationId):
 def check_employees(username, password):
     authcursor.execute("SELECT username, hashPassword, authorizationId FROM USERS WHERE username = %s", (username,) )
     employee = authcursor.fetchone()
-    print(employee)
 
     if employee and check_password_hash(employee[1], password): 
         username, hashPassword, authorizationId = employee
@@ -55,7 +54,6 @@ def authenticate():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    
     return check_employees(username, password)
 
 """ just for adding users in the database
