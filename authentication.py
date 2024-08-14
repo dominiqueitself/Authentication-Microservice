@@ -33,18 +33,17 @@ def generate_token(username, authorizationId):
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
         "Content-Type": "application/json",
     }
-    token = jwt.encode(payload=payload, header=header)
+    token = jwt.encode(payload=payload, key=secret_key, algorithm="HS256")
     return token
 
 #function - for checking the user's username and password
 def check_employees(username, password):
-
-    authcursor.execute("SELECT username, authorizationId FROM USERS WHERE email = %s", (username,) )
+    authcursor.execute("SELECT username, hashPassword, authorizationId FROM USERS WHERE email = %s", (username,) )
     employee = authcursor.fetchone()
     print(employee)
 
     if employee and check_password_hash(employee[1], password): 
-        username, authorizationId = employee
+        username, hashPassword, authorizationId = employee
         token = generate_token(username, authorizationId)
         return jsonify({"token": token}), 200
     elif employee is None:
@@ -56,12 +55,8 @@ def authenticate():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
-    #calling the check_employee function
-    result = check_employees(username, password)
-
-    #returns the result of the checking of the user's credentials
-    return jsonify(result) 
+    
+    return check_employees(username, password)
 
 """ just for adding users in the database
 @app.route('/')
@@ -77,6 +72,5 @@ def generate_password():
     return 200
 """
 
-    
 if __name__ == '__main__':
     app.run(port=3307, debug=True)
