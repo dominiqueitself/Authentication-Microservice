@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
-import json
-import mysql.connector as mysql
-import jwt
 from werkzeug.security import generate_password_hash, check_password_hash
+import mysql.connector as mysql
+import json
+import jwt
 import datetime 
 
 app = Flask(__name__)
@@ -38,7 +38,7 @@ def generate_token(username, authorizationId):
 
 #function - for checking the user's username and password
 def check_employees(username, password):
-    authcursor.execute("SELECT username, hashPassword, authorizationId FROM USERS WHERE email = %s", (username,) )
+    authcursor.execute("SELECT username, hashPassword, authorizationId FROM USERS WHERE username = %s", (username,) )
     employee = authcursor.fetchone()
     print(employee)
 
