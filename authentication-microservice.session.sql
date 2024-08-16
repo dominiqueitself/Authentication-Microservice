@@ -24,3 +24,5 @@ VALUES ('Finance Head', 'The head of the finance department'),
 INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId)
 VALUES ('dominique', '32768:8:1$zBjykVE9iwQjDjRI$5194baa4c18417e6aef1634116a82aa83bbba43d8dedb716e9d058d448ca0e23b9d414811f20656b3c97fd3ed2833fc8d48323acf6ba225bd8e0ab36c9608fc7', 
 		'shanejain@gmail.com', 09213373133, 1)
+
+ALTER TABLE USERS ADD COLUMN accountLocked BOOLEAN DEFAULT FALSE;

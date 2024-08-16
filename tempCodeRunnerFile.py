@@ -1,9 +1,3 @@
-from flask import Flask, jsonify, request
-from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector as mysql
-import json
-import jwt
-import datetime 
 
 app = Flask(__name__)
 
@@ -42,13 +36,11 @@ def check_employees(username, password):
     employee = authcursor.fetchone()
 
     if employee and check_password_hash(employee[1], password): 
-        username, authorizationId = employee
+        username, hashPassword, authorizationId = employee
         token = generate_token(username, authorizationId)
         return jsonify({"token": token}), 200
-    elif employee:
+    elif employee is None:
         return jsonify({"error": 'Invalid credentials'}), 401
-    else:
-        return jsonify({"error": 'Unexpected Error'})
 
 #API route for checking the user's credential and sending out result
 @app.route('/authenticate', methods=['POST'])
@@ -57,26 +49,3 @@ def authenticate():
     username = data.get('username')
     password = data.get('password')
     return check_employees(username, password)
-
-@app.route('/accountLocked', methods=['POST'])
-def accountLocked():
-    data = request.get_json()
-    username = data.get('username')
-    authcursor.execute("UPDATE USERS SET accountLocked = TRUE WHERE username = %s", (username,))
-    return True
-
-""" just for adding users in the database
-@app.route('/')
-def generate_password():
-    password = generate_password_hash("maingayKAYO")
-    values = ("dominique", password, "shanejain00@gmail.com", '09213373131', 2)
-
-    sql = "INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId) VALUES (%s, %s, %s, %s, %s)"
-    authcursor.execute(sql, values)
-    authdb.commit()
-    authcursor.close()
-    authdb.close()
-    return 200
-"""
-if __name__ == '__main__':
-    app.run(port=3307, debug=True)
