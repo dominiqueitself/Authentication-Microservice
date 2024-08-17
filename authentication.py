@@ -50,7 +50,7 @@ def check_employees(username, password):
     employee = authcursor.fetchone()
 
     if employee and check_password_hash(employee[1], password): 
-        username, roleName = employee
+        username, hashPassword, roleName = employee
         token = generate_token(username, roleName)
         return jsonify({"token": token}), 200
     elif employee:
