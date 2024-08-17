@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector as mysql
 import json
 import jwt
+import pytz
 import datetime 
 
 app = Flask(__name__)
@@ -20,17 +21,17 @@ secret_key = "&Hygf%mGko"
 authdb = mysql.connect(
     host = "localhost",
     user = "root",
-    password = "buchibi",
+    password = "fms-group3",
     database = "authentication"
 )
 authcursor = authdb.cursor()
 
 #function - for generating a token
-def generate_token(username, authorizationId):
+def generate_token(username, roleName):
     payload = {
         "username": username,
-        "authorization ID": authorizationId,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
+        "role": roleName,  # Use role name here
+        "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=30),
         "Content-Type": "application/json",
     }
     token = jwt.encode(payload=payload, key=secret_key, algorithm="HS256")
@@ -49,6 +50,43 @@ def check_employees(username, password):
         return jsonify({"error": 'Invalid credentials'}), 401
     else:
         return jsonify({"error": 'Unexpected Error'})
+
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    data = request.get_json()
+    token = data.get('token')
+
+    try:
+        # Decode the token
+        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+
+        # Return the username and role name instead of ID
+        return jsonify({
+            "username": decoded_token["username"],
+            "role": decoded_token["role"] 
+        }), 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token has expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
+
+    
+def check_employees(username, password):
+    sql = """SELECT u.username, u.hashPassword, a.roleName 
+             FROM USERS u
+             JOIN AUTHORIZATIONS a ON u.authorizationId = a.authorizationId
+             WHERE u.username = %s"""
+    
+    authcursor.execute(sql, (username,))
+    employee = authcursor.fetchone()
+
+    if employee and check_password_hash(employee[1], password): 
+        username, hashPassword, roleName = employee
+        token = generate_token(username, roleName)
+        return jsonify({"token": token}), 200
+    elif employee is None:
+        return jsonify({"error": 'Invalid credentials'}), 401
 
 #API route for checking the user's credential and sending out result
 @app.route('/authenticate', methods=['POST'])

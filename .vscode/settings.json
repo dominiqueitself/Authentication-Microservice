@@ -14,10 +14,10 @@
             "server": "localhost",
             "port": 33060,
             "driver": "MySQL",
-            "name": "authentication-microservice",
-            "username": "root",
+            "name": "Authentication-Microservice",
             "database": "authentication",
-            "password": "buchibi",
+            "username": "root",
+            "password": "fms-group3",
             "connectionTimeout": 30
         }
     ]
