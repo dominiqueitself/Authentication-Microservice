@@ -5,6 +5,7 @@ import json
 import jwt
 import pytz
 import datetime 
+import os
 
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ header = {
 }  
 
 #secret key - kailangan pang iseperate sa .env file
-secret_key = "&Hygf%mGko" 
+app.secret_key = os.urandom(24)
 
 #connecting to the database
 authdb = mysql.connect(
@@ -36,7 +37,7 @@ def generate_token(username, roleName):
         "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=30),
         "Content-Type": "application/json",
     }
-    token = jwt.encode(payload=payload, key=secret_key, algorithm="HS256")
+    token = jwt.encode(payload=payload, key=app.secret_key, algorithm="HS256")
     return token
 
 #function - for checking the user's username and password
@@ -69,7 +70,7 @@ def verify_token():
 
     try:
         # Decode the token
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        decoded_token = jwt.decode(token, app.secret_key, algorithms=["HS256"])
 
         # Return the username and role name instead of ID
         return jsonify({
@@ -84,7 +85,7 @@ def verify_token():
 
 
 # for checking the user's credential and sending out result
-@app.route('/authenticate', methods=['POST'])
+@app.route('/account/authenticate', methods=['POST'])
 def authenticate():
     data = request.get_json()
     username = data.get('username')
@@ -92,18 +93,26 @@ def authenticate():
     return check_employees(username, password)
 
 # for locking the users account when login attempts have exceeded
-@app.route('/accountLocked', methods=['POST'])
-def accountLocked():
+@app.route('/account/locked', methods=['POST'])
+def account_locked():
     data = request.get_json()
     username = data.get('username')
     authcursor.execute("UPDATE USERS SET accountLocked = TRUE WHERE username = %s", (username,))
     return True
 
+@app.route('/account/check', methods=['POST'])
+def check_account():
+    email = request.json.get('email')
+    authcursor.execute("SELECT email FROM USERS WHERE email = %s", (email,))
+    if authcursor.fetchone():
+        return jsonify({"result": True}), 200
+    else:
+        return jsonify({"result": False}), 404
 """
 @app.route('/')
 def generate_password():
-    password = generate_password_hash("helloWorld")
-    values = ("renz", password, "renzfb@gmail.com", '09213373122', 1)
+    password = generate_password_hash("maingayKAYO")
+    values = ("Dominique", password, "shanejain00@gmail.com", '09214473133', 1)
 
     sql = "INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId) VALUES (%s, %s, %s, %s, %s)"
     authcursor.execute(sql, values)
@@ -112,5 +121,6 @@ def generate_password():
     authdb.close()
     return 200
 """
+
 if __name__ == '__main__':
     app.run(port=3307, debug=True)
