@@ -4,55 +4,51 @@ import mysql.connector as mysql
 import json
 import jwt
 import pytz
-import datetime 
+import datetime
 import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-#for generating and checking password
-header = {  
-  "alg": "HS256",  
-  "typ": "JWT",
-}  
+load_dotenv()
 
-#secret key - kailangan pang iseperate sa .env file
-app.secret_key = os.urandom(24)
+app.secret_key = os.getenv("SECRET_KEY")
 
 #connecting to the database
 authdb = mysql.connect(
-    host = "localhost",
-    user = "root",
-    password = "buchibi",
-    database = "authentication"
+    host = os.getenv("DB_HOST"),
+    user = os.getenv("DB_USER"),
+    password = os.getenv("DB_PASSWORD"),
+    database = os.getenv("DB_NAME")
 )
 authcursor = authdb.cursor()
 
 # FUNCTIONS
 
-#function - for generating a token
-def generate_token(username, roleName):
+# generating a token
+def generate_token(username, role_name):
     payload = {
         "username": username,
-        "role": roleName,
+        "role": role_name,
         "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=30),
         "Content-Type": "application/json",
     }
     token = jwt.encode(payload=payload, key=app.secret_key, algorithm="HS256")
     return token
 
-#function - for checking the user's username and password
+# checking the user's username and password
 def check_employees(username, password):
-    sql = """SELECT u.username, u.hashPassword, a.roleName 
+    sql = """SELECT u.username, u.hashed_password, a.role_name
              FROM USERS u
-             JOIN AUTHORIZATIONS a ON u.authorizationId = a.authorizationId
+             JOIN AUTHORIZATIONS a ON u.authorization_id = a.authorization_id
              WHERE u.username = %s"""
-    
+
     authcursor.execute(sql, (username,))
     employee = authcursor.fetchone()
 
-    if employee and check_password_hash(employee[1], password): 
-        username, hashPassword, roleName = employee
-        token = generate_token(username, roleName)
+    if employee and check_password_hash(employee[1], password):
+        username, hashed_password, role_name = employee
+        token = generate_token(username, role_name)
         return jsonify({"token": token}), 200
     elif employee:
         return jsonify({"error": 'Invalid credentials'}), 401
@@ -61,6 +57,10 @@ def check_employees(username, password):
 
 
 # API ROUTES
+
+@app.route('/')
+def home():
+    return "Welcome to the Authentication Microservices API"
 
 # for verifying the token of the user to access certain modules
 @app.route('/verify-token', methods=['POST'])
@@ -75,7 +75,7 @@ def verify_token():
         # Return the username and role name instead of ID
         return jsonify({
             "username": decoded_token["username"],
-            "role": decoded_token["role"] 
+            "role": decoded_token["role"]
         }), 200
 
     except jwt.ExpiredSignatureError:
@@ -84,7 +84,7 @@ def verify_token():
         return jsonify({"error": "Invalid token"}), 401
 
 
-# for checking the user's credential and sending out result
+# checking the user's credential
 @app.route('/account/authenticate', methods=['POST'])
 def authenticate():
     data = request.get_json()
@@ -108,19 +108,6 @@ def check_account():
         return jsonify({"result": True}), 200
     else:
         return jsonify({"result": False}), 404
-"""
-@app.route('/')
-def generate_password():
-    password = generate_password_hash("maingayKAYO")
-    values = ("Dominique", password, "shanejain00@gmail.com", '09214473133', 1)
-
-    sql = "INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId) VALUES (%s, %s, %s, %s, %s)"
-    authcursor.execute(sql, values)
-    authdb.commit()
-    authcursor.close()
-    authdb.close()
-    return 200
-"""
 
 if __name__ == '__main__':
     app.run(port=3307, debug=True)
