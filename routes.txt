@@ -1,0 +1,12 @@
+@app.route('/') # just a simple welcome page
+@app.route('/verify-token', methods=['POST']) # verifying the token that the user have
+
+# checking the users credential by the username and password that he/she inputted
+@app.route('/account/authenticate', methods=['POST'])
+
+# this route automatically locks an account
+@app.route('/account/locked', methods=['POST'])
+
+# this route checks the users email, if it is in the system to prevent any unnecessary email message when he/she is not a 
+# registered user
+@app.route('/account/check', methods=['POST'])

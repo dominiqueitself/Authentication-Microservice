@@ -110,4 +110,4 @@ def check_account():
         return jsonify({"result": False}), 404
 
 if __name__ == '__main__':
-    app.run(port=3307, debug=True)
+    app.run(debug=False)
