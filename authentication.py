@@ -28,16 +28,22 @@ try:
         host=os.getenv('DB_HOST', 'localhost'),
         user=os.getenv('DB_USER', 'postgres'),
         password=os.getenv('DB_PASSWORD', 'fms-group3'),
-        dbname=os.getenv('DB_NAME', 'authentication')
+        dbname=os.getenv('DB_NAME', 'authentication'),
+        sslmode='require'  # Add this line for SSL connection
     )
     authdb.autocommit = True  # Enable autocommit for PostgreSQL
     authcursor = authdb.cursor()
     print(f"Successfully connected to the database at {os.getenv('DB_HOST')}")
 except psycopg2.Error as e:
     print(f"Error connecting to the database: {e}")
+    authcursor = None  # Initialize authcursor to None if connection fails
 
 # Function to print all tables in the database
 def print_tables():
+    if authcursor is None:  # Check if authcursor was successfully created
+        print("Database connection was not established.")
+        return  # Exit the function if the connection failed
+    
     try:
         authcursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
         tables = authcursor.fetchall()
