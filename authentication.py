@@ -5,6 +5,7 @@ import json
 import jwt
 import pytz
 import datetime
+import os
 
 app = Flask(__name__)
 
@@ -19,11 +20,18 @@ secret_key = "&Hygf%mGko"
 
 # Connect to the authentication database (PostgreSQL)
 authdb = psycopg2.connect(
-    host="localhost",
-    user="postgres",  # Change to ur PostgreSQL user
-    password="fms-group3",  # Change to ur PostgreSQL password
-    dbname="authentication"
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    dbname=os.getenv("DB_NAME")
 )
+
+# authdb = psycopg2.connect(
+#     host="localhost",
+#     user="postgres",  # Change to ur PostgreSQL user
+#     password="fms-group3",  # Change to ur PostgreSQL password
+#     dbname="authentication"
+# )
 authdb.autocommit = True  # Enable autocommit for PostgreSQL
 authcursor = authdb.cursor()
 
