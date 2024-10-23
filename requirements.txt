@@ -1,0 +1,4 @@
+Flask==2.3.2         
+psycopg2-binary==2.9.3  # This is the binary package for psycopg2, easier to install
+PyJWT==2.6.0        
+pytz==2023.3        
