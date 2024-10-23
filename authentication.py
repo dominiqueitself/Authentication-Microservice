@@ -30,13 +30,13 @@ authcursor = authdb.cursor()
 def generate_token(username, roleName):
     payload = {
         "username": username,
-        "role": roleName,  # Use role name here
-        "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=30),
+        "role": roleName,
+        "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=60),  # Increased expiration time
         "Content-Type": "application/json",
     }
     token = jwt.encode(payload=payload, key=secret_key, algorithm="HS256")
     return token
-
+    
 # Function to check employee credentials
 def check_employees(username, password):
     sql = """SELECT u.username, u.hashPassword, a.roleName, u.accountLocked 
