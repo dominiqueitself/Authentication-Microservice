@@ -25,10 +25,10 @@ secret_key = os.getenv('SECRET_KEY', "&Hygf%mGko")
 # Connect to the authentication database (PostgreSQL)
 try:
     authdb = psycopg2.connect(
-        host=os.getenv('DB_HOST', 'LOCAL_HOST'),
-        user=os.getenv('DB_USER', 'LOCAL_USER'),
-        password=os.getenv('DB_PASSWORD', 'LOCAL_PASSWORD'),
-        dbname=os.getenv('DB_NAME', 'LOCAL_NAME')
+        host=os.getenv('DB_HOST', 'localhost'),
+        user=os.getenv('DB_USER', 'postgres'),
+        password=os.getenv('DB_PASSWORD', 'fms-group3'),
+        dbname=os.getenv('DB_NAME', 'authentication')
     )
     authdb.autocommit = True  # Enable autocommit for PostgreSQL
     authcursor = authdb.cursor()
