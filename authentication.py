@@ -7,13 +7,11 @@ import pytz
 import datetime
 import os
 from dotenv import load_dotenv  # Import to load .env
-from flask_cors import CORS  # Import CORS for cross-origin requests
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
 # JWT configuration for password checking and token generation
 header = {  
@@ -167,7 +165,5 @@ def accountLocked():
     authcursor.execute("UPDATE users SET accountLocked = TRUE WHERE username = %s", (username,))  # Adjusted to lowercase
     return jsonify({"message": "Account locked"}), 200
 
-# Adjust port for deployment environment
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 10000))  # Use PORT from environment if available
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=10000, debug=True)
