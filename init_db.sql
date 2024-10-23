@@ -1,9 +1,3 @@
--- Drop the existing database (uncomment if you want to drop it every time)
--- DROP DATABASE IF EXISTS authentication;
-
--- Create the authentication database
-CREATE DATABASE authentication;
-
 -- Connect to the authentication database
 \c authentication;
 
@@ -41,7 +35,7 @@ VALUES
     ('LMS Admin', 'The one who can manipulate the inventory and room management'),
     ('Hospital Staff', 'Can only view the available supplies and room availability');
 
--- Optional: Insert test data into USERS (you can modify this as necessary)
+-- Insert test data into USERS (you can modify this as necessary)
 INSERT INTO USERS (username, hashPassword, email, contactNumber, authorizationId)
 VALUES 
     ('finmanager', 'fin123', 'finmanager@company.com', '09210000004', 1),
