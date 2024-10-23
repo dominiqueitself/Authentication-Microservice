@@ -32,8 +32,22 @@ try:
     )
     authdb.autocommit = True  # Enable autocommit for PostgreSQL
     authcursor = authdb.cursor()
+    print(f"Successfully connected to the database at {os.getenv('DB_HOST')}")
 except psycopg2.Error as e:
     print(f"Error connecting to the database: {e}")
+
+# Function to print all tables in the database
+def print_tables():
+    try:
+        authcursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
+        tables = authcursor.fetchall()
+        print("Tables in the database:")
+        for table in tables:
+            print(table[0])
+    except psycopg2.Error as e:
+        print(f"Error fetching tables: {e}")
+
+print_tables()  # Call the function to print tables
 
 # Function for generating a JWT token
 def generate_token(username, roleName):
@@ -49,26 +63,30 @@ def generate_token(username, roleName):
 # Function to check employee credentials
 def check_employees(username, password):
     sql = """SELECT u.username, u.hashPassword, a.roleName, u.accountLocked 
-             FROM "USERS" u
-             JOIN "AUTHORIZATIONS" a ON u.authorizationId = a.authorizationId
+             FROM users u  -- Adjusted to lowercase
+             JOIN authorizations a ON u.authorizationId = a.authorizationId
              WHERE u.username = %s"""
     
-    authcursor.execute(sql, (username,))
-    employee = authcursor.fetchone()
+    try:
+        authcursor.execute(sql, (username,))
+        employee = authcursor.fetchone()
 
-    if employee:
-        if employee[3]:  # Check if account is locked
-            return jsonify({"error": 'Your account is locked. Please contact tech support.'}), 403
-        
-        # Unpack the retrieved fields
-        username, hashPassword, roleName = employee[:3]
-        if check_password_hash(hashPassword, password):
-            token = generate_token(username, roleName)
-            return jsonify({"token": token}), 200
+        if employee:
+            if employee[3]:  # Check if account is locked
+                return jsonify({"error": 'Your account is locked. Please contact tech support.'}), 403
+            
+            # Unpack the retrieved fields
+            username, hashPassword, roleName = employee[:3]
+            if check_password_hash(hashPassword, password):
+                token = generate_token(username, roleName)
+                return jsonify({"token": token}), 200
+            else:
+                return jsonify({"error": 'Invalid credentials'}), 401
         else:
             return jsonify({"error": 'Invalid credentials'}), 401
-    else:
-        return jsonify({"error": 'Invalid credentials'}), 401
+    except psycopg2.Error as e:
+        print(f"Error executing query: {e}")
+        return jsonify({"error": "Database error occurred."}), 500
 
 # API route to authenticate and generate a token
 @app.route('/authenticate', methods=['POST'])
@@ -104,11 +122,15 @@ def verify_token():
 # Function to insert a new user into the USERS table
 def create_user(username, password, email, contactNumber, authorizationId):
     hashed_password = generate_password_hash(password)
-    sql = """INSERT INTO "USERS" (username, hashPassword, email, contactNumber, authorizationId, accountLocked) 
-             VALUES (%s, %s, %s, %s, %s, %s)"""
+    sql = """INSERT INTO users (username, hashPassword, email, contactNumber, authorizationId, accountLocked) 
+             VALUES (%s, %s, %s, %s, %s, %s)"""  # Adjusted to lowercase
     values = (username, hashed_password, email, contactNumber, authorizationId, False)
     
-    authcursor.execute(sql, values)
+    try:
+        authcursor.execute(sql, values)
+    except psycopg2.IntegrityError:
+        authdb.rollback()  # Rollback in case of unique constraint violation
+        print(f"User {username} already exists. Skipping.")
 
 # This part will run automatically to insert users
 @app.route('/generate-users', methods=['POST'])
@@ -124,11 +146,7 @@ def generate_users():
         ]
 
         for username, password, email, contactNumber, authorizationId in users:
-            try:
-                create_user(username, password, email, contactNumber, authorizationId)
-            except psycopg2.IntegrityError:
-                authdb.rollback()  # Rollback in case of unique constraint violation
-                continue  # Skip user if already exists
+            create_user(username, password, email, contactNumber, authorizationId)
 
         return jsonify({"message": "Users created successfully"}), 201
     except psycopg2.Error as err:
@@ -140,11 +158,11 @@ def accountLocked():
     data = request.get_json()
     username = data.get('username')
     # Check if user exists before attempting to lock
-    authcursor.execute("SELECT username FROM \"USERS\" WHERE username = %s", (username,))
+    authcursor.execute("SELECT username FROM users WHERE username = %s", (username,))  # Adjusted to lowercase
     if not authcursor.fetchone():
         return jsonify({"error": "User not found."}), 404
     
-    authcursor.execute("UPDATE \"USERS\" SET accountLocked = TRUE WHERE username = %s", (username,))
+    authcursor.execute("UPDATE users SET accountLocked = TRUE WHERE username = %s", (username,))  # Adjusted to lowercase
     return jsonify({"message": "Account locked"}), 200
 
 if __name__ == "__main__":
