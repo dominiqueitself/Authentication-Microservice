@@ -18,12 +18,13 @@ header = {
 # Secret key (move this to an environment variable for better security)
 secret_key = "&Hygf%mGko"
 
-# Connect to the authentication database (PostgreSQL)
+# Use environment variables or hardcode the connection details for testing
 authdb = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    dbname=os.getenv("DB_NAME")
+    host=os.getenv("DB_HOST", "dpg-csc9dlo8fa8c73frtoa0-a"), 
+    port=5432, 
+    user=os.getenv("DB_USER", "authentication_uctu_user"),  
+    password=os.getenv("DB_PASSWORD", "RLh4BZTR1hpckcfK82cZsjinkPQP0lr3"), 
+    dbname=os.getenv("DB_NAME", "authentication_uctu") 
 )
 
 # authdb = psycopg2.connect(
