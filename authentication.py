@@ -132,26 +132,6 @@ def create_user(username, password, email, contactNumber, authorizationId):
         authdb.rollback()  # Rollback in case of unique constraint violation
         print(f"User {username} already exists. Skipping.")
 
-# This part will run automatically to insert users
-@app.route('/generate-users', methods=['POST'])
-def generate_users():
-    try:
-        users = [
-            ("finmanager", "fin123", "finmanager@company.com", "09210000004", 1),
-            ("billingspec", "billing123", "billingspec@company.com", "09210000005", 2),
-            ("sysadmin", "admin123", "sysadmin@company.com", "09210000006", 3),
-            ("claimsspec", "claims123", "claimsspec@company.com", "09210000007", 4),
-            ("pms_user", "pms123", "pmsuser@company.com", "09210000008", 8),
-            ("lms_user", "lms123", "lmsuser@company.com", "09210000009", 9)
-        ]
-
-        for username, password, email, contactNumber, authorizationId in users:
-            create_user(username, password, email, contactNumber, authorizationId)
-
-        return jsonify({"message": "Users created successfully"}), 201
-    except psycopg2.Error as err:
-        return jsonify({"error": str(err)}), 400
-
 # API route to lock an account
 @app.route('/accountLocked', methods=['POST'])
 def accountLocked():
