@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
-import json
 import jwt
 import pytz
 import datetime
@@ -20,16 +19,18 @@ header = {
 }  
 
 # Secret key for JWT
-secret_key = os.getenv('SECRET_KEY', "&Hygf%mGko")
+secret_key = os.getenv('SECRET_KEY')
+if not secret_key:
+    raise ValueError("Secret key is not set")
 
 # Connect to the authentication database (PostgreSQL)
 try:
     authdb = psycopg2.connect(
-        host=os.getenv('DB_HOST', 'localhost'),
-        user=os.getenv('DB_USER', 'postgres'),
-        password=os.getenv('DB_PASSWORD', 'fms-group3'),
-        dbname=os.getenv('DB_NAME', 'authentication'),
-        sslmode='require'  # Add this line for SSL connection
+        host=os.getenv('DB_HOST'),  # No default value
+        user=os.getenv('DB_USER'),  # No default value
+        password=os.getenv('DB_PASSWORD'),  # No default value
+        dbname=os.getenv('DB_NAME', 'authentication'),  # Default database name
+        sslmode=os.getenv('DB_SSL_MODE', 'require')  # SSL mode can be configured via environment variable
     )
     authdb.autocommit = True  # Enable autocommit for PostgreSQL
     authcursor = authdb.cursor()
@@ -57,10 +58,11 @@ print_tables()  # Call the function to print tables
 
 # Function for generating a JWT token
 def generate_token(username, roleName):
+    token_expiry_minutes = int(os.getenv('TOKEN_EXPIRY_MINUTES', 60))  # Default to 60 minutes if not set
     payload = {
         "username": username,
         "role": roleName,
-        "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=60),  # Token expiration time
+        "exp": datetime.datetime.now(pytz.utc) + datetime.timedelta(minutes=token_expiry_minutes),
         "Content-Type": "application/json",
     }
     token = jwt.encode(payload=payload, key=secret_key, algorithm="HS256")
@@ -69,7 +71,7 @@ def generate_token(username, roleName):
 # Function to check employee credentials
 def check_employees(username, password):
     sql = """SELECT u.username, u.hashPassword, a.roleName, u.accountLocked 
-             FROM users u  -- Adjusted to lowercase
+             FROM users u
              JOIN authorizations a ON u.authorizationId = a.authorizationId
              WHERE u.username = %s"""
     
@@ -129,7 +131,7 @@ def verify_token():
 def create_user(username, password, email, contactNumber, authorizationId):
     hashed_password = generate_password_hash(password)
     sql = """INSERT INTO users (username, hashPassword, email, contactNumber, authorizationId, accountLocked) 
-             VALUES (%s, %s, %s, %s, %s, %s)"""  # Adjusted to lowercase
+             VALUES (%s, %s, %s, %s, %s, %s)"""
     values = (username, hashed_password, email, contactNumber, authorizationId, False)
     
     try:
@@ -138,7 +140,7 @@ def create_user(username, password, email, contactNumber, authorizationId):
         authdb.rollback()  # Rollback in case of unique constraint violation
         print(f"User {username} already exists. Skipping.")
 
-# This part will run automatically to insert users
+# API route to create predefined users
 @app.route('/generate-users', methods=['POST'])
 def generate_users():
     try:
@@ -163,12 +165,13 @@ def generate_users():
 def accountLocked():
     data = request.get_json()
     username = data.get('username')
+    
     # Check if user exists before attempting to lock
-    authcursor.execute("SELECT username FROM users WHERE username = %s", (username,))  # Adjusted to lowercase
+    authcursor.execute("SELECT username FROM users WHERE username = %s", (username,))
     if not authcursor.fetchone():
         return jsonify({"error": "User not found."}), 404
     
-    authcursor.execute("UPDATE users SET accountLocked = TRUE WHERE username = %s", (username,))  # Adjusted to lowercase
+    authcursor.execute("UPDATE users SET accountLocked = TRUE WHERE username = %s", (username,))
     return jsonify({"message": "Account locked"}), 200
 
 if __name__ == "__main__":
